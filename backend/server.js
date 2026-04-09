@@ -5,21 +5,26 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Database setup
-const dbPath = path.join(__dirname, 'equipment.db');
+// Database setup - Render compatible
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/tmp/equipment.db'   // Render free tier मा
+  : path.join(__dirname, 'equipment.db');  // Local development मा
+
 console.log(`📁 Database path: ${dbPath}`);
 
-// Delete existing database for fresh start (remove this line for production)
-if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath);
-    console.log('🗑️ Removed existing database');
+// Only delete database in development, not in production
+if (process.env.NODE_ENV !== 'production') {
+    if (fs.existsSync(dbPath)) {
+        fs.unlinkSync(dbPath);
+        console.log('🗑️ Removed existing database (development only)');
+    }
 }
 
 const db = new sqlite3.Database(dbPath);
